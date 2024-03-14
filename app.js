@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express')
-const jwt = require('jsonwebtoken')
 const authController = require('./controllers/authController');
 const conectarBancoDados = require('./db');
 
@@ -13,6 +12,8 @@ app.get('/', (req, res) =>{
 })
 
 app.post('/auth/registro', authController.registroUsuario);
+
+app.post('/auth/login', authController.loginUsuario);
 
 conectarBancoDados().then(() => {
     app.listen(3000, () => {
