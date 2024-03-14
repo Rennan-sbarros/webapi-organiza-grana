@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken')
 const User = require('../models/User');
 
 exports.registroUsuario = async (req, res) => {
@@ -31,6 +32,37 @@ exports.registroUsuario = async (req, res) => {
         await user.save()
         res.status(201).json({msg: "Usuário criado com sucesso!"})
     } catch(error) {
-        res.status(500).json({msg: error + "Erro no servidor, tente novamente mais tarde!"})
+        res.status(500).json({msg: "Erro no servidor, tente novamente mais tarde!"})
+    }
+}
+
+exports.loginUsuario = async(req, res) => {
+    const { email, senha } = req.body;
+
+    if(!email || !senha) {
+        return res.status(422).json({msg: 'Todos os campos são obrigatórios!'});
+    }
+
+    const usuario = await User.findOne({ email: email })
+
+    if(!usuario) {
+        return res.status(404).json({msg: 'Usuário não encontrado'})
+    }
+
+    const checkSenha = await bcrypt.compare(senha, usuario.senha)
+    if(!checkSenha) {
+        return res.status(422).json({msg: 'Senha inválida'})
+    }
+
+    try {
+        const secret = process.env.SECRET
+        const token = jwt.sign({
+            id: usuario._id
+        }, secret,)
+
+        res.status(200).json({msg: "Autenticação realizada com sucesso!", token})
+
+    } catch(error) {
+        res.status(500).json({msg: "Erro no servidor, tente novamente mais tarde!"})
     }
 }
