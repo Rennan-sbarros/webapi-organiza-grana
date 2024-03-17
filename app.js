@@ -15,6 +15,8 @@ app.post('/auth/registro', authController.registroUsuario);
 
 app.post('/auth/login', authController.loginUsuario);
 
+app.get('/usuario/:id', authController.checkToken, authController.rotaPrivada);
+
 conectarBancoDados().then(() => {
     app.listen(3000, () => {
         console.log('Servidor em execução na porta 3000');
