@@ -1,7 +1,9 @@
 require('dotenv').config();
 const express = require('express')
-const authController = require('./controllers/authController');
 const conectarBancoDados = require('./db');
+
+const authController = require('./controllers/authController');
+const cadastroFinancaController = require('./controllers/financas/cadastroFinancaController');
 
 const app = express()
 
@@ -16,6 +18,8 @@ app.post('/auth/registro', authController.registroUsuario);
 app.post('/auth/login', authController.loginUsuario);
 
 app.get('/usuario/:id', authController.checkToken, authController.rotaPrivada);
+
+app.post('/cadastroFinanca', authController.checkToken, cadastroFinancaController.adicionarFinancas);
 
 conectarBancoDados().then(() => {
     app.listen(3000, () => {
