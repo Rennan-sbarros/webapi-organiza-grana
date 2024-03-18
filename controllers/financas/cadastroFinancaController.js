@@ -2,6 +2,7 @@ const Financa = require('../../models/financas/Financa');
 const InfoFinanca = require('../../models/financas/InfoFinanca');
 const Ganhos = require('../../models/financas/Ganhos');
 const Despesas = require('../../models/financas/Despesas');
+const Categorias = require('../../models/financas/Categoria');
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -16,6 +17,13 @@ exports.adicionarFinancas = async (req, res) => {
 
         if (total > 100) {
             return res.status(400).json({ error: 'A soma das porcentagens não pode ser maior que 100%.' });
+        }
+
+        for (const despesa of despesas) {
+            const categoria = await Categorias.findOne({ _id: despesa.categoriaId });
+            if (!categoria) {
+                return res.status(400).json({ error: 'Categoria não encontrada' });
+            }
         }
 
         const infoFinanca = new InfoFinanca({
@@ -44,15 +52,16 @@ exports.adicionarFinancas = async (req, res) => {
             await ganhoFinanca.save();
         }
 
-        for (const despesa of despesas){
+        for (const despesa of despesas) {
             const despesaFinanca = new Despesas({
-                idUsuario: idUsuario,
-                transacaoId: transacaoId,
-                categoriaDespesa: despesa.categoriaDespesa,
+                idUsuario,
+                transacaoId,
+                categoriaDespesa: despesa.categoriaNome,
                 descricaoDespesa: despesa.descricaoDespesa,
-                valorDespesa: despesa.valorDespesa
-            })
-
+                valorDespesa: despesa.valorDespesa,
+                categoriaId: despesa.categoriaId
+            });
+            
             await despesaFinanca.save();
         }
 
