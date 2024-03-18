@@ -65,15 +65,20 @@ exports.adicionarFinancas = async (req, res) => {
         }
 
         for (const despesa of despesas) {
+            const categoria = await Categorias.findOne({ _id: despesa.categoriaId });
+            if (!categoria) {
+                return res.status(400).json({ error: 'Categoria não encontrada.' });
+            }
+        
             const despesaFinanca = new Despesas({
                 idUsuario,
                 transacaoId,
-                categoriaDespesa: despesa.categoriaNome,
+                categoriaDespesa: categoria.categoriaNome, 
                 descricaoDespesa: despesa.descricaoDespesa,
                 valorDespesa: despesa.valorDespesa,
                 categoriaId: despesa.categoriaId
             });
-            
+        
             await despesaFinanca.save();
         }
 
