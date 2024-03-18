@@ -13,6 +13,14 @@ exports.adicionarFinancas = async (req, res) => {
 
         const transacaoId = uuidv4();
 
+        const camposObrigatoriosInformacoes = !informacoes.mes || !informacoes.ano || !informacoes.objetivo;
+        const camposObrigatoriosGanhos = ganhos.some(ganho => !ganho.origemValor || !ganho.valorGanhos);
+        const camposObrigatoriosDespesas = despesas.some(despesa => !despesa.descricaoDespesa || !despesa.valorDespesa);
+
+        if (camposObrigatoriosInformacoes || camposObrigatoriosGanhos || camposObrigatoriosDespesas) {
+            return res.status(400).json({ error: 'Todos os campos obrigatórios devem ser preenchidos.' });
+        }
+
         const total = (informacoes.poupanca || 0) + (informacoes.alimentacao || 0) + (informacoes.lazer || 0) + (informacoes.passeio || 0) + (informacoes.outros || 0);
 
         if (total > 100) {
@@ -20,9 +28,13 @@ exports.adicionarFinancas = async (req, res) => {
         }
 
         for (const despesa of despesas) {
+            if (!despesa.categoriaId) {
+                return res.status(400).json({ error: 'O campo categoria é obrigatório.' });
+            }
+
             const categoria = await Categorias.findOne({ _id: despesa.categoriaId });
             if (!categoria) {
-                return res.status(400).json({ error: 'Categoria não encontrada' });
+                return res.status(400).json({ error: 'Categoria não encontrada.' });
             }
         }
 
