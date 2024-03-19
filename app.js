@@ -5,6 +5,7 @@ const conectarBancoDados = require('./db');
 const authController = require('./controllers/authController');
 const cadastroFinancaController = require('./controllers/financas/cadastroFinancaController');
 const cadastroCategorias = require('./controllers/financas/categoriasController');
+const listaFinancasPorUsuario = require('./controllers/financas/listaFinancasByIdUsuarioController');
 
 const app = express()
 
@@ -23,6 +24,8 @@ app.get('/usuario/:id', authController.checkToken, authController.rotaPrivada);
 app.post('/cadastroFinanca', authController.checkToken, cadastroFinancaController.adicionarFinancas);
 
 app.post('/adicionarCategorias', cadastroCategorias.adicionarCategoria);
+
+app.get('/financas', authController.checkToken, listaFinancasPorUsuario.getFinancasByIdUsuario);
 
 conectarBancoDados().then(() => {
     app.listen(3000, () => {
