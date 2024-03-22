@@ -2,11 +2,9 @@ require('dotenv').config();
 const express = require('express')
 const conectarBancoDados = require('./db');
 
-const authController = require('./controllers/authController');
-const cadastroFinancaController = require('./controllers/financas/cadastroFinancaController');
-const categorias = require('./controllers/financas/categoriasController');
-const listaFinancasPorUsuario = require('./controllers/financas/listaFinancasByIdUsuarioController');
-const deletarFinancaByFinancaId = require('./controllers/financas/deletarFinancaController');
+const authRoutes = require('./routes/auth.routes');
+const financasRoutes = require('./routes/financas.routes');
+const categoriasRoutes = require('./routes/categorias.routes');
 
 const app = express()
 
@@ -16,21 +14,11 @@ app.get('/', (req, res) =>{
     res.status(200).json({msg: 'Bem vindo a nossa API'})
 })
 
-app.post('/auth/registro', authController.registroUsuario);
+app.use('/auth', authRoutes);
 
-app.post('/auth/login', authController.loginUsuario);
+app.use('/financas', financasRoutes);
 
-app.get('/usuario/:id', authController.checkToken, authController.rotaPrivada);
-
-app.post('/cadastroFinanca', authController.checkToken, cadastroFinancaController.adicionarFinancas);
-
-app.post('/adicionarCategorias', categorias.adicionarCategoria);
-
-app.get('/financas', authController.checkToken, listaFinancasPorUsuario.getFinancasByIdUsuario);
-
-app.delete('/deletarFinanca/:financaId', authController.checkToken, deletarFinancaByFinancaId.deletarFinancaByFinancaId);
-
-app.get('/categorias', categorias.listaCategorias);
+app.use('/categorias', categoriasRoutes);
 
 conectarBancoDados().then(() => {
     app.listen(3000, () => {
