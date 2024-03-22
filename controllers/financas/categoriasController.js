@@ -18,3 +18,12 @@ exports.adicionarCategoria = async (req, res) => {
         res.status(500).json({ error: 'Erro ao adicionar categorias.' });
     }
 }
+
+exports.listaCategorias = async (req, res) => {
+    try {
+        const categorias = await Categorias.find({}, '-__v');
+        res.status(200).json(categorias);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao buscar categorias' });
+    }
+}
