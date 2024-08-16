@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
-const User = require('../models/User');
-const jwt = require('jsonwebtoken')
+const User = require('../../models/User');
+const jwt = require('jsonwebtoken');
 
 exports.registroUsuario = async (req, res) => {
     const { nome, email, senha, confirmacaoSenha } = req.body;
@@ -80,4 +80,3 @@ exports.loginUsuario = async (req, res) => {
         res.status(500).json({ msg: "Erro no servidor, tente novamente mais tarde!" });
     }
 }
-
