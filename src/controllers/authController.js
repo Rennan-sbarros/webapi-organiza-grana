@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
+const jwt = require('jsonwebtoken')
 
 exports.registroUsuario = async (req, res) => {
     const { nome, email, senha, confirmacaoSenha } = req.body;
@@ -36,6 +37,47 @@ exports.registroUsuario = async (req, res) => {
             return res.status(422).json({ msg: 'Erro de validação', errors: error.errors });
         }
         res.status(500).json({msg: "Erro no servidor, tente novamente mais tarde!"})
+    }
+}
+
+exports.loginUsuario = async (req, res) => {
+    const { email, senha } = req.body;
+
+    if (!email || !senha) {
+        return res.status(422).json({ msg: 'Todos os campos são obrigatórios!' });
+    }
+
+    try {
+        const usuario = await User.findOne({ email: email });
+
+        if (!usuario) {
+            return res.status(404).json({ msg: 'Usuário não encontrado' });
+        }
+
+        const checkSenha = await bcrypt.compare(senha, usuario.senha);
+        if (!checkSenha) {
+            return res.status(422).json({ msg: 'Senha inválida' });
+        }
+
+        const secret = process.env.SECRET;
+        if (!secret) {
+            return res.status(500).json({ msg: 'Erro interno do servidor. Contate o administrador.' });
+        }
+
+        const token = jwt.sign({
+            id: usuario._id
+        }, secret, { expiresIn: '24h' }); 
+
+        if (usuario.primeiro_login) {
+            usuario.primeiro_login = false;
+            await usuario.save();
+        }
+
+        res.status(200).json({ msg: "Autenticação realizada com sucesso!", token });
+
+    } catch (error) {
+        console.error('Erro ao realizar login:', error);
+        res.status(500).json({ msg: "Erro no servidor, tente novamente mais tarde!" });
     }
 }
 
