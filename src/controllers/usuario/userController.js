@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const User = require('../../models/User');
 const jwt = require('jsonwebtoken');
+const { adicionarTokenNaListaNegra, verificarTokenNaListaNegra } = require('../../services/tokenService');
 
 const CAMPOS_NAO_PERMITIDOS = ['senha', 'provedor', 'primeiro_login', 'criado_em', 'atualizado_em'];
 
@@ -75,7 +76,7 @@ exports.loginUsuario = async (req, res) => {
         if (!usuario) {
             return res.status(404).json({ msg: 'Usuário não encontrado' });
         }
-
+    
         const checkSenha = await bcrypt.compare(senha, usuario.senha);
         if (!checkSenha) {
             return res.status(422).json({ msg: 'Senha inválida' });
@@ -102,6 +103,23 @@ exports.loginUsuario = async (req, res) => {
         res.status(500).json({ msg: "Erro no servidor, tente novamente mais tarde!" });
     }
 }
+
+exports.logoutUsuario = async (req, res) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+
+    if (!token) {
+        return res.status(400).json({ msg: 'Token não fornecido' });
+    }
+
+    try {
+        adicionarTokenNaListaNegra(token);
+        
+        res.status(200).json({ msg: 'Logout realizado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao realizar logout:', error);
+        res.status(500).json({ msg: 'Erro no servidor, tente novamente mais tarde!' });
+    }
+};
 
 exports.usuarioById = async(req, res) => {
     const { id } = req.params;

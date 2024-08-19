@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken')
+const { verificarTokenNaListaNegra } = require('../../services/tokenService');
 
 exports.checkToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -6,6 +7,10 @@ exports.checkToken = (req, res, next) => {
 
     if (!token) {
         return res.status(401).json({ msg: 'Acesso negado' });
+    }
+
+    if (verificarTokenNaListaNegra(token)) {
+        return res.status(401).json({ msg: 'Token revogado' });
     }
 
     try {
