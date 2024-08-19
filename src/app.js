@@ -2,7 +2,9 @@ require('dotenv').config();
 const express = require('express')
 const cors = require('cors');
 
-const conectarBancoDados = require('./db');
+const conectarBancoDados = require('./config/db');
+
+const authRoutes = require('./routes/auth.routes');
 
 const app = express()
 
@@ -13,6 +15,8 @@ app.use(express.json())
 app.get('/', (req, res) =>{
     res.status(200).json({msg: 'Bem vindo a nossa API'})
 })
+
+app.use('/auth', authRoutes);
 
 conectarBancoDados().then(() => {
     app.listen(3000, () => {
