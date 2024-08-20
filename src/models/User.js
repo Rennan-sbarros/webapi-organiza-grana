@@ -41,6 +41,14 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    recoveryToken: {
+        type: String,
+        default: null
+    },
+    recoveryTokenExpires: {
+        type: Date,
+        default: null
+    },
     criado_em: {
         type: Date,
     },
