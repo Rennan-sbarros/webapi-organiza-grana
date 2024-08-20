@@ -1,7 +1,9 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const User = require('../../models/User');
 const jwt = require('jsonwebtoken');
-const { adicionarTokenNaListaNegra, verificarTokenNaListaNegra } = require('../../services/tokenService');
+const nodemailer = require('nodemailer');
+const { adicionarTokenNaListaNegra } = require('../../services/tokenService');
 
 const CAMPOS_NAO_PERMITIDOS = ['senha', 'provedor', 'primeiro_login', 'criado_em', 'atualizado_em'];
 
@@ -165,3 +167,86 @@ exports.atualizarUsuario = async(req, res) => {
         res.status(500).json({ msg: 'Erro no servidor, tente novamente mais tarde!' });
     }
 }
+
+exports.recuperarSenha = async(req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ msg: 'Email é obrigatório.' });
+    }
+
+    try{
+        const usuario = await User.findOne({ email });
+
+        if (!usuario) {
+            return res.status(404).json({ msg: 'Usuário não encontrado.' });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const expiraEm = Date.now() + 3600000; 
+
+        usuario.recoveryToken = resetTokenHash;
+        usuario.recoveryTokenExpires = expiraEm;
+        await usuario.save();
+
+        const transporter = nodemailer.createTransport({
+            service: 'hotmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        const mailOptions = {
+            to: email,
+            from: process.env.EMAIL_USER,
+            subject: 'Recuperação de Senha',
+            text: `Você solicitou a recuperação de senha para sua conta.\n\n` +
+                  `Por favor, clique no link abaixo ou cole-o em seu navegador para concluir o processo:\n\n` +
+                  `http://${req.headers.host}/resetar-senha/${token}\n\n` +
+                  `Se você não solicitou uma recuperação de senha, por favor, ignore este e-mail.\n`
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({ msg: 'E-mail de recuperação enviado com sucesso.' });
+    }catch (error) {
+        res.status(500).json({ msg: 'Erro ao tentar enviar o e-mail de recuperação.' });
+    }
+}
+
+exports.resetarSenha = async (req, res) => {
+    const { token } = req.params;
+    const { senha, confirmacaoSenha } = req.body;
+
+    if (!senha || !confirmacaoSenha) {
+        return res.status(400).json({ msg: 'Senha e confirmação de senha são obrigatórios.' });
+    }
+
+    if (senha !== confirmacaoSenha) {
+        return res.status(400).json({ msg: 'As senhas não coincidem.' });
+    }
+
+    try {
+        const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const usuario = await User.findOne({
+            recoveryToken: resetTokenHash,
+            recoveryTokenExpires: { $gt: Date.now() }
+        });
+
+        if (!usuario) {
+            return res.status(400).json({ msg: 'Token inválido ou expirado.' });
+        }
+
+        usuario.senha = await bcrypt.hash(senha, 12);
+        usuario.recoveryToken = null;
+        usuario.recoveryTokenExpires = null;
+        await usuario.save();
+
+        res.status(200).json({ msg: 'Senha alterada com sucesso.' });
+    } catch (error) {
+        res.status(500).json({ msg: 'Erro ao tentar resetar a senha.' });
+    }
+};
